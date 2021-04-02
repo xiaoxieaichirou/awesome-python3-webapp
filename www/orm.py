@@ -19,7 +19,7 @@ async def create_pool(loop, **kw):
     # 使用这些基本参数来创建连接池
     # await 和 async 是联动的（异步IO）
     __pool = await aiomysql.create_pool(
-        host=kw.get('host', '8.129.132.234'),
+        host=kw.get('host', 'localhost'),
         port=kw.get('port', 3306),
         user=kw['user'],
         password=kw['password'],
@@ -173,7 +173,6 @@ class Model(dict, metaclass=ModelMetaclass):
     def getValue(self, key):
         return getattr(self, key, None)
 
-    #
     def getValueOrDefault(self, key):
         value = getattr(self, key, None)
         if value is None:
@@ -189,7 +188,7 @@ class Model(dict, metaclass=ModelMetaclass):
     # *** 往 Model 类添加 class 方法，就可以让所有子类调用 class 方法
     @classmethod
     async def findAll(cls, where=None, args=None, **kw):
-        ## find objects by where clause
+        # find objects by where clause
         sql = [cls.__select__]
         # where 默认值为 None
         # 如果 where 有值就在 sql 加上字符串 'where' 和 变量 where
@@ -229,7 +228,7 @@ class Model(dict, metaclass=ModelMetaclass):
 
     @classmethod
     async def findNumber(cls, selectField, where=None, args=None):
-        ## find number by select and where
+        # find number by select and where
         # 找到选中的数及其位置
         sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__)]
         if where:
