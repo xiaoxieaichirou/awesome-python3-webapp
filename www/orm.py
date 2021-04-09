@@ -21,9 +21,9 @@ async def create_pool(loop, **kw):
     __pool = await aiomysql.create_pool(
         host=kw.get('host', 'localhost'),
         port=kw.get('port', 3306),
-        user=kw['user'],
-        password=kw['password'],
-        db=kw['db'],
+        user=kw.get('user'),
+        password=kw.get('password'),
+        db=kw.get('db'),
         charset=kw.get('charset', 'utf8'),
         autocommit=kw.get('autocommit', True),
         maxsize=kw.get('maxsize', 10),
@@ -64,17 +64,23 @@ async def select(sql, args, size=None):
 
 
 # execute ：执行
-async def execute(sql, args):
+async def execute(sql, args, autocommit=True):
     log(sql)
     global __pool
     with (await __pool) as conn:
+        if not autocommit:
+            await conn.begin()
         try:
             cur = await conn.cursor()
             await cur.execute(sql.replace('?', '%s'), args)
             # rowcount 获取行数，应该表示的是该函数影响的行数
             affected = cur.rowcount
             await cur.close()
-        except BaseException as _:
+            if not autocommit:
+                await conn.commit()
+        except BaseException as e:
+            if not autocommit:
+                await conn.rollback()
             # 源码 except BaseException as e: 反正不用这个 e ，改掉就不报错
             # 将错误抛出，BaseEXception 是异常不用管
             raise

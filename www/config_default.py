@@ -7,9 +7,10 @@
 configs = {
     'debug': True,
     'db': {
-        'host': '127.0.0.1',
+        'host': '8.129.132.234',
         'port': 3306,
         'user': 'root',
+        'password': 'admin123',
         'db': 'test'
     },
     'session': {
