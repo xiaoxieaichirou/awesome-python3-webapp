@@ -19,7 +19,7 @@ async def create_pool(loop, **kw):
     # 使用这些基本参数来创建连接池
     # await 和 async 是联动的（异步IO）
     __pool = await aiomysql.create_pool(
-        host=kw.get('host', 'localhost'),
+        host=kw.get('host'),
         port=kw.get('port', 3306),
         user=kw.get('user'),
         password=kw.get('password'),
