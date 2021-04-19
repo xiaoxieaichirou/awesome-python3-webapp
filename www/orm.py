@@ -19,11 +19,11 @@ async def create_pool(loop, **kw):
     # 使用这些基本参数来创建连接池
     # await 和 async 是联动的（异步IO）
     __pool = await aiomysql.create_pool(
-        host=kw.get('host', '8.129.132.234'),
+        host=kw.get('host'),
         port=kw.get('port', 3306),
-        user=kw['user'],
-        password=kw['password'],
-        db=kw['db'],
+        user=kw.get('user'),
+        password=kw.get('password'),
+        db=kw.get('db'),
         charset=kw.get('charset', 'utf8'),
         autocommit=kw.get('autocommit', True),
         maxsize=kw.get('maxsize', 10),
@@ -64,17 +64,23 @@ async def select(sql, args, size=None):
 
 
 # execute ：执行
-async def execute(sql, args):
+async def execute(sql, args, autocommit=True):
     log(sql)
     global __pool
     with (await __pool) as conn:
+        if not autocommit:
+            await conn.begin()
         try:
             cur = await conn.cursor()
             await cur.execute(sql.replace('?', '%s'), args)
             # rowcount 获取行数，应该表示的是该函数影响的行数
             affected = cur.rowcount
             await cur.close()
-        except BaseException as _:
+            if not autocommit:
+                await conn.commit()
+        except BaseException as e:
+            if not autocommit:
+                await conn.rollback()
             # 源码 except BaseException as e: 反正不用这个 e ，改掉就不报错
             # 将错误抛出，BaseEXception 是异常不用管
             raise
@@ -144,9 +150,9 @@ class ModelMetaclass(type):
         # 构造默认的 SELECT, INSERT, UPDAT E和 DELETE 语句
         attrs['__select__'] = 'select `%s`, %s from `%s`' % (primaryKey, ', '.join(escaped_fields), tableName)
         attrs['__insert__'] = 'insert into `%s` (%s, `%s`) values (%s)' % (
-        tableName, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
+            tableName, ', '.join(escaped_fields), primaryKey, create_args_string(len(escaped_fields) + 1))
         attrs['__update__'] = 'update `%s` set %s where `%s`=?' % (
-        tableName, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
+            tableName, ', '.join(map(lambda f: '`%s`=?' % (mappings.get(f).name or f), fields)), primaryKey)
         attrs['__delete__'] = 'delete from `%s` where `%s`=?' % (tableName, primaryKey)
         return type.__new__(cls, name, bases, attrs)
 
@@ -173,7 +179,6 @@ class Model(dict, metaclass=ModelMetaclass):
     def getValue(self, key):
         return getattr(self, key, None)
 
-    #
     def getValueOrDefault(self, key):
         value = getattr(self, key, None)
         if value is None:
@@ -189,7 +194,7 @@ class Model(dict, metaclass=ModelMetaclass):
     # *** 往 Model 类添加 class 方法，就可以让所有子类调用 class 方法
     @classmethod
     async def findAll(cls, where=None, args=None, **kw):
-        ## find objects by where clause
+        # find objects by where clause
         sql = [cls.__select__]
         # where 默认值为 None
         # 如果 where 有值就在 sql 加上字符串 'where' 和 变量 where
@@ -229,7 +234,7 @@ class Model(dict, metaclass=ModelMetaclass):
 
     @classmethod
     async def findNumber(cls, selectField, where=None, args=None):
-        ## find number by select and where
+        # find number by select and where
         # 找到选中的数及其位置
         sql = ['select %s _num_ from `%s`' % (selectField, cls.__table__)]
         if where:
@@ -243,7 +248,7 @@ class Model(dict, metaclass=ModelMetaclass):
 
     @classmethod
     async def find(cls, pk):
-        ## find object by primary key
+        # find object by primary key
         # 通过主键找对象
         rs = await select('%s where `%s`=?' % (cls.__select__, cls.__primary_key__), [pk], 1)
         if len(rs) == 0:
@@ -270,6 +275,8 @@ class Model(dict, metaclass=ModelMetaclass):
         rows = await execute(self.__delete__, args)
         if rows != 1:
             logging.warning('failed to remove by primary key: affected rows: %s' % rows)
+
+
 # save , update , remove 这三个可以对比着来看
 
 

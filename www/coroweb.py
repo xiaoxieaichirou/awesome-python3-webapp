@@ -1,13 +1,18 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+
 import asyncio, os, inspect, logging, functools
+
 from urllib import parse
+
 from aiohttp import web
+
 from apis import APIError
 
 def get(path):
     """
-    定义装饰器 @get('/path')
+    Define decorator @get('/path')
     """
     def decorator(func):
         @functools.wraps(func)
@@ -19,9 +24,9 @@ def get(path):
     return decorator
 
 def post(path):
-    """
-    定义装饰器 @post('/path')
-    """
+    '''
+    Define decorator @post('/path')
+    '''
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kw):
@@ -35,7 +40,7 @@ def get_required_kw_args(fn):
     args = []
     params = inspect.signature(fn).parameters
     for name, param in params.items():
-        if params.kind == inspect.Parameter.KEYWORD_ONLY and param.default == inspect.Parameter.empty:
+        if param.kind == inspect.Parameter.KEYWORD_ONLY and param.default == inspect.Parameter.empty:
             args.append(name)
     return tuple(args)
 
@@ -68,7 +73,7 @@ def has_request_arg(fn):
             found = True
             continue
         if found and (param.kind != inspect.Parameter.VAR_POSITIONAL and param.kind != inspect.Parameter.KEYWORD_ONLY and param.kind != inspect.Parameter.VAR_KEYWORD):
-            raise ValueError('request parameter must be the last named parameter in function: {}{}'.format(fn.__name__, str(sig)))
+            raise ValueError('request parameter must be the last named parameter in function: %s%s' % (fn.__name__, str(sig)))
     return found
 
 class RequestHandler(object):
