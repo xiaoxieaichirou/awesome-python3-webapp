@@ -87,9 +87,6 @@ async def execute(sql, args, autocommit=True):
         # 返回行数
         return affected
 
-
-# 今天先摸了，写这么多注释也是一个学习的过程 2020/10/14
-
 # 这个函数只在下面的 Model元类中被调用， 作用好像是加数量为 num 的'?'
 def create_args_string(num):
     L = []
@@ -100,7 +97,6 @@ def create_args_string(num):
 
 
 # Model 只是一个基类，所以先定义 ModelMetaclass ，再在定义 Model 时使用 metaclass 参数
-# 参考蔡老师教程： https://www.liaoxuefeng.com/wiki/1016959663602400/1017592449371072
 class ModelMetaclass(type):
     # __new__()方法接收到的参数依次是：
     # cls：当前准备创建的类的对象 class
@@ -123,7 +119,7 @@ class ModelMetaclass(type):
         for k, v in attrs.items():
             # isinstance 函数：如果 v 和 Field 类型相同则返回 True ，不相同则 False
             if isinstance(v, Field):
-                logging.info(' found mapping: %s ==> %s' % (k, v))
+                logging.info('found mapping: %s ==> %s' % (k, v))
                 mappings[k] = v
                 # 这里的 v.primary_key 我理解为 ：只要 primary_key 为 True 则这个 field 为主键
                 if v.primary_key:
@@ -209,7 +205,7 @@ class Model(dict, metaclass=ModelMetaclass):
         orderBy = kw.get('orderBy', None)
         if orderBy:
             # get 可以返回 orderBy 的值，如果失败就返回 None ，这样失败也不会出错
-            # oederBy 有值时给 sql 加上它，为空值时什么也不干
+            # orderBy 有值时给 sql 加上它，为空值时什么也不干
             sql.append('order by')
             sql.append(orderBy)
         # 开头和上面 orderBy 类似
