@@ -5,7 +5,7 @@
 async web application.
 '''
 
-import logging;
+import logging
 
 logging.basicConfig(level=logging.INFO)
 
@@ -47,8 +47,7 @@ async def logger_factory(app, handler):
     async def logger(request):
         logging.info('Request: %s %s' % (request.method, request.path))
         # await asyncio.sleep(0.3)
-        return (await handler(request))
-
+        return await handler(request)
     return logger
 
 
@@ -61,8 +60,7 @@ async def data_factory(app, handler):
             elif request.content_type.startswith('application/x-www-form-urlencoded'):
                 request.__data__ = await request.post()
                 logging.info('request form: %s' % str(request.__data__))
-        return (await handler(request))
-
+        return await handler(request)
     return parse_data
 
 
@@ -103,7 +101,6 @@ async def response_factory(app, handler):
         resp = web.Response(body=str(r).encode('utf-8'))
         resp.content_type = 'text/plain;charset=utf-8'
         return resp
-
     return response
 
 
