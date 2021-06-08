@@ -9,7 +9,7 @@ from config import configs
 import markdown2
 
 from aiohttp import web
-from apis import Page, APIValueError, APIPermissionError, APIResourceNotFoundError
+from apis import Page, APIValueError, APIPermissionError, APIResourceNotFoundError, APIError
 
 COOKIE_NAME = 'awesession'
 _COOKIE_KEY = configs.session.secret
@@ -19,9 +19,6 @@ _COOKIE_KEY = configs.session.secret
 def check_admin(request):
     if request.__user__ is None or not request.__user__.admin:
         raise APIPermissionError()
-# def check_admin(user):
-#     if user is None or not user.admin:
-#         raise APIPermissionError()
 
 
 def get_page_index(page_str):
@@ -46,23 +43,6 @@ def user2cookie(user, max_age):
 def text2html(text):
     lines = map(lambda s: '<p>%s</p>' % s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'), filter(lambda s: s.strip() != '', text.split('\n')))
     return ''.join(lines)
-
-
-# 将登录用户绑定到request对象上
-async def auth_factory(app, handler):
-    async def auth(request):
-        logging.info(f'check user: {request.method, request.path}')
-        request.__user__ = None
-        cookie_str = request.cookies.get(COOKIE_NAME)
-        if cookie_str:
-            user = await cookie2user(cookie_str)
-            if user:
-                logging.info(f'set current user: {user.email}')
-                request.__user__ = user
-        if request.path.startswit('/manage') and (request.__user__ is None or not request.__user__.admin):
-            return web.HTTPFound('/signin')
-        return await handler(request)
-    return auth
 
 
 async def cookie2user(cookie_str):
@@ -90,26 +70,6 @@ async def cookie2user(cookie_str):
         return None
 
 
-# @get('/')
-# async def index(request):
-#     summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore ' \
-#               'et dolore magna aliqua.'
-#     blogs = [
-#         Blog(id='1', name='Test Blog', summary=summary, created_at=time.time() - 120),
-#         Blog(id='2', name='Something New', summary=summary, created_at=time.time() - 3600),
-#         Blog(id='3', name='Learn Swift', summary=summary, created_at=time.time() - 7200),
-#     ]
-#     # 源代码
-#     # return {
-#     #     '__template__': 'blogs.html',
-#     #     'blogs': blogs,
-#     # }
-#
-#     cookie_str = request.cookies.get(COOKIE_NAME)
-#     user = await cookie2user(cookie_str)
-#
-#     return {'__template__': 'blogs.html', 'blogs': blogs, '__user__': user}
-# 源码
 @get('/')
 async def index(*, page='1'):
     page_index = get_page_index(page)
@@ -274,7 +234,7 @@ def api_delete_comments(id, request):
 @get('/api/users')
 async def api_get_users(*, page='1'):
     page_index = get_page_index(page)
-    num = await User.findNumber('count(id')
+    num = await User.findNumber('count(id)')
     p = Page(num, page_index)
     if num == 0:
         return dict(page=p, users=())
@@ -299,7 +259,7 @@ async def api_register_user(*, email, name, passwd):
         raise APIValueError('passwd')
     users = await User.findAll('email=?', [email])
     if len(users) > 0:
-        raise APIValueError('register:failed', 'email', 'Email is already in use.')
+        raise APIError('register:failed', 'email', 'Email is already in use.')
     uid = next_id()
     sha1_passwd = '%s:%s' % (uid, passwd)
     user = User(id=uid, name=name.strip(), email=email, passwd=hashlib.sha1(sha1_passwd.encode('utf-8')).hexdigest(),
@@ -334,25 +294,9 @@ async def api_get_blog(*, id):
 
 
 # 创建日志
-# @post('/api/blogs')
-# async def api_create_blog(request, *, name, summary, content):
-#     cookie_str = request.cookies.get(COOKIE_NAME)
-#     user = await cookie2user(cookie_str)
-#     check_admin(user)
-#     if not name or not name.strip():
-#         raise APIValueError('name', 'name cannot be empty.')
-#     if not summary or not summary.strip():
-#         raise APIValueError('summary', 'summary cannot be empty.')
-#     if not content or not content.strip():
-#         raise APIValueError('content', 'content cannot be empty.')
-#     blog = Blog(user_id=user.id, user_name=user.name, user_image=user.image,
-#                 name=name.strip(), summary=summary.strip(), content=content.strip())
-#     await blog.save()
-#     return blog
-# 创建日志 源码
 @post('/api/blogs')
 async def api_create_blog(request, *, name, summary, content):
-    # check_admin(request)
+    check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name cannot be empty.')
     if not summary or not summary.strip():
@@ -361,6 +305,24 @@ async def api_create_blog(request, *, name, summary, content):
         raise APIValueError('content', 'content cannot be empty.')
     blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, name=name.strip(), summary=summary.strip(), content=content.strip())
     await blog.save()
+    return blog
+
+
+# 修改日志
+@post('/api/blogs/{id}')
+async def api_update_blog(id, request, *, name, summary, content):
+    check_admin(request)
+    blog = await Blog.find(id)
+    if not name or not name.strip():
+        raise APIValueError('name', 'name cannot be empty.')
+    if not summary or not summary.strip():
+        raise APIValueError('summary', 'summary cannot be empty.')
+    if not content or not content.strip():
+        raise APIValueError('content', 'content cannot be empty.')
+    blog.name = name.strip()
+    blog.summary = summary.strip()
+    blog.content = content.strip()
+    await blog.update()
     return blog
 
 
