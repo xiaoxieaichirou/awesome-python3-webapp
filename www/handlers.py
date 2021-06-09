@@ -195,38 +195,38 @@ def manage_users(*, page='1'):
 
 
 @get('/api/comments')
-def api_comments(*, page='1'):
+async def api_comments(*, page='1'):
     page_index = get_page_index(page)
-    num = yield from Comment.findNumber('count(id)')
+    num = await Comment.findNumber('count(id)')
     p = Page(num, page_index)
     if num == 0:
         return dict(page=p, comments=())
-    comments = yield from Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    comments = await Comment.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, comments=comments)
 
 
 @post('/api/blogs/{id}/comments')
-def api_create_comment(id, request, *, content):
+async def api_create_comment(id, request, *, content):
     user = request.__user__
     if user is None:
         raise APIPermissionError('Please signin first.')
     if not content or not content.strip():
         raise APIValueError('content')
-    blog = yield from Blog.find(id)
+    blog = await Blog.find(id)
     if blog is None:
         raise APIResourceNotFoundError('Blog')
     comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
-    yield from comment.save()
+    await comment.save()
     return comment
 
 
 @post('/api/comments/{id}/delete')
-def api_delete_comments(id, request):
+async def api_delete_comments(id, request):
     check_admin(request)
-    c = yield from Comment.find(id)
+    c = await Comment.find(id)
     if c is None:
         raise APIResourceNotFoundError('Comment')
-    yield from c.remove()
+    await c.remove()
     return dict(id=id)
 
 
