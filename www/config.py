@@ -35,6 +35,8 @@ def merge(defaults, override):
                 r[k] = merge(v, override[k])
             else:
                 r[k] = override[k]
+        else:
+            r[k] = v
     return r
 
 def toDict(d):
