@@ -8,7 +8,7 @@
 configs = {
     'debug': True,
     'db': {
-        'host': '127.0.0.1',
+        'host': '8.129.132.234',
         'port': 3306,
         'user': '13226',
         'password': 'qweqwe123',

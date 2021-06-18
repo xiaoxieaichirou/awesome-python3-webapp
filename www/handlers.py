@@ -15,7 +15,6 @@ COOKIE_NAME = 'awesession'
 _COOKIE_KEY = configs.session.secret
 
 
-# 源代码
 def check_admin(request):
     if request.__user__ is None or not request.__user__.admin:
         raise APIPermissionError()
@@ -41,7 +40,8 @@ def user2cookie(user, max_age):
 
 
 def text2html(text):
-    lines = map(lambda s: '<p>%s</p>' % s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'), filter(lambda s: s.strip() != '', text.split('\n')))
+    lines = map(lambda s: '<p>%s</p>' % s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'),
+                filter(lambda s: s.strip() != '', text.split('\n')))
     return ''.join(lines)
 
 
@@ -215,7 +215,8 @@ async def api_create_comment(id, request, *, content):
     blog = await Blog.find(id)
     if blog is None:
         raise APIResourceNotFoundError('Blog')
-    comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image, content=content.strip())
+    comment = Comment(blog_id=blog.id, user_id=user.id, user_name=user.name, user_image=user.image,
+                      content=content.strip())
     await comment.save()
     return comment
 
@@ -263,7 +264,8 @@ async def api_register_user(*, email, name, passwd):
     uid = next_id()
     sha1_passwd = '%s:%s' % (uid, passwd)
     user = User(id=uid, name=name.strip(), email=email, passwd=hashlib.sha1(sha1_passwd.encode('utf-8')).hexdigest(),
-                image='http://www.gravatar.com/avatar/%s?d=mm&s=120' % hashlib.md5(email.encode('utf-8')).hexdigest())
+                # image='http://www.gravatar.com/avatar/%s?d=mm&s=120' % hashlib.md5(email.encode('utf-8')).hexdigest())
+                image='https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=594167883,2040552866&fm=26&gp=0.jpg')
     await user.save()
     # make session cookie:
     r = web.Response()
@@ -303,7 +305,8 @@ async def api_create_blog(request, *, name, summary, content):
         raise APIValueError('summary', 'summary cannot be empty.')
     if not content or not content.strip():
         raise APIValueError('content', 'content cannot be empty.')
-    blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image, name=name.strip(), summary=summary.strip(), content=content.strip())
+    blog = Blog(user_id=request.__user__.id, user_name=request.__user__.name, user_image=request.__user__.image,
+                name=name.strip(), summary=summary.strip(), content=content.strip())
     await blog.save()
     return blog
 
