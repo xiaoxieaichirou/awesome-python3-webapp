@@ -70,6 +70,7 @@ async def cookie2user(cookie_str):
         return None
 
 
+# 首页
 @get('/')
 async def index(*, page='1'):
     page_index = get_page_index(page)
@@ -86,6 +87,7 @@ async def index(*, page='1'):
     }
 
 
+# 日志详情页
 @get('/blog/{id}')
 async def get_blog(id):
     blog = await Blog.find(id)
@@ -100,6 +102,7 @@ async def get_blog(id):
     }
 
 
+# 注册页
 @get('/register')
 def register():
     return {
@@ -107,6 +110,7 @@ def register():
     }
 
 
+# 登陆页
 @get('/signin')
 def signin():
     return {
@@ -114,6 +118,7 @@ def signin():
     }
 
 
+# 登陆
 @post('/api/authenticate')
 async def authenticate(*, email, passwd):
     if not email:
@@ -138,6 +143,7 @@ async def authenticate(*, email, passwd):
     return r
 
 
+# 登出页
 @get('/signout')
 def signout(request):
     referer = request.headers.get('Referer')
@@ -152,6 +158,7 @@ def manage():
     return 'redirect:/manage/comments'
 
 
+# 评论列表页
 @get('/manage/comments')
 def manage_comments(*, page='1'):
     return {
@@ -160,6 +167,7 @@ def manage_comments(*, page='1'):
     }
 
 
+# 日志列表页
 @get('/manage/blogs')
 def manage_blogs(*, page='1'):
     return {
@@ -168,6 +176,7 @@ def manage_blogs(*, page='1'):
     }
 
 
+# 创建日志页
 @get('/manage/blogs/create')
 def manage_create_blog():
     return {
@@ -176,7 +185,7 @@ def manage_create_blog():
         'action': '/api/blogs'
     }
 
-
+# 修改日志页
 @get('/manage/blogs/edit')
 def manage_edit_blog(*, id):
     return {
@@ -186,6 +195,7 @@ def manage_edit_blog(*, id):
     }
 
 
+# 用户列表页
 @get('/manage/users')
 def manage_users(*, page='1'):
     return {
@@ -194,6 +204,7 @@ def manage_users(*, page='1'):
     }
 
 
+# 获取评论
 @get('/api/comments')
 async def api_comments(*, page='1'):
     page_index = get_page_index(page)
@@ -205,6 +216,7 @@ async def api_comments(*, page='1'):
     return dict(page=p, comments=comments)
 
 
+# 创建评论
 @post('/api/blogs/{id}/comments')
 async def api_create_comment(id, request, *, content):
     user = request.__user__
@@ -221,6 +233,7 @@ async def api_create_comment(id, request, *, content):
     return comment
 
 
+# 删除评论
 @post('/api/comments/{id}/delete')
 async def api_delete_comments(id, request):
     check_admin(request)
