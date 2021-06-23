@@ -45,12 +45,12 @@ def deploy():
         sudo(f'tar -xzvf {_REMOTE_TMP_TAR}')
     # 重置软链接:
     with cd(_REMOTE_BASE_DIR):
-        sudo('rm -f www')
+        sudo('rm -rf www')
         sudo(f'ln -s {newdir} www')
-        sudo('chown www-data:www-data www')
-        sudo(f'chown -R www-data:www-data {newdir}')
+        # sudo('chown www-data:www-data www')
+        # sudo(f'chown -R www-data:www-data {newdir}')
     # 重启python服务和nginx服务器:
     with settings(warn_only=True):
         sudo('supervisorctl stop awesome')
         sudo('supervisorctl start awesome')
-        sudo('/etc/init.d/nginx reload')
+        run('nginx -s reload', warn_only=True)
