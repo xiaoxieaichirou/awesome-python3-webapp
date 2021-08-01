@@ -45,6 +45,7 @@ def init_jinja2(app, **kw):
     app['__templating__'] = env
 
 
+# 记录器
 async def logger_factory(app, handler):
     async def logger(request):
         logging.info('Request: %s %s' % (request.method, request.path))
@@ -53,7 +54,7 @@ async def logger_factory(app, handler):
     return logger
 
 
-# 将登录用户绑定到request对象上
+# 认证，将登录用户绑定到request对象上
 async def auth_factory(app, handler):
     async def auth(request):
         logging.info('check user: %s %s' % (request.method, request.path))
@@ -70,6 +71,7 @@ async def auth_factory(app, handler):
     return auth
 
 
+# 数据
 async def data_factory(app, handler):
     async def parse_data(request):
         if request.method == 'POST':
